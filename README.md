@@ -27,7 +27,8 @@ Grant the key only what you need:
 | Capability                          | Permissions |
 | ----------------------------------- | ----------- |
 | Read-only (recommended to start)    | `hosts:list`, `hosts:read`, `networks:list`, `networks:read`, `roles:list`, `roles:read`, `routes:list`, `routes:read`, `tags:list`, `tags:read` |
-| Host management (the full tool set) | the above, plus `hosts:create`, `hosts:update`, `hosts:delete`, `hosts:enroll`, `hosts:block`, `hosts:unblock` |
+| Host management | the above, plus `hosts:create`, `hosts:update`, `hosts:delete`, `hosts:enroll`, `hosts:block`, `hosts:unblock` |
+| Live diagnostics (the full tool set) | the above, plus `hosts:debug` |
 
 Tools whose permissions the key lacks still appear in the list, but fail with
 the API's own permission error when called.
@@ -108,6 +109,30 @@ Two consequences worth knowing:
 | `block_host` / `unblock_host` | Revoke and restore network access |
 | `delete_host` | Permanently delete a host — irreversible, prefer `block_host` |
 
+### Live diagnostics
+
+These reach the dnclient running on the machine, so the host must be **online**.
+An offline host returns a not-reachable error rather than stale data.
+
+| Tool | Description |
+| ---- | ----------- |
+| `run_host_diagnostic` | Run one read-only command: `Ping`, `ListCommands`, `PrintCert`, `PrintTunnel`, `QueryLighthouse`, `CreateTunnel`, `DebugStack` |
+| `stream_host_logs` | Collect live logs for a fixed window (1-600s, default 15) at a given level |
+| `restart_host_client` | Restart the dnclient — briefly drops tunnels, changes no config |
+
+`PrintCert`, `PrintTunnel`, `QueryLighthouse` and `CreateTunnel` take a `target`
+Nebula IP, from another host's `ipAddresses`. A `null` result from these usually
+means the target is offline or has never been seen by this host, which is itself
+the answer to "why can't these two talk?".
+
+`Restart` is kept out of `run_host_diagnostic`'s command list on purpose. It is
+disruptive, so it gets its own tool and its own approval prompt rather than
+riding in as one enum value among several harmless ones.
+
+**These block.** A diagnostic waits up to ~45s; `stream_host_logs` blocks for its
+whole window. Logs are only produced while the window is open, so trigger the
+behaviour you are debugging during it.
+
 List results are paginated. Responses carry a `pagination` object; pass its
 `nextCursor` back as `cursor` to continue.
 
@@ -122,9 +147,9 @@ cause real damage if it regresses.
 
 ## Not yet covered
 
-- `POST /v1/hosts/{hostID}/command` (`hosts:debug`) — the dnclient debug
-  commands, including `StreamLogs` and `QueryLighthouse`. It is a streaming
-  endpoint and needs different handling from the JSON tools here.
+- **Triggering client updates.** dnclient reports supporting `DoUpdate` and
+  `DoConfigUpdate`, but the API's command allow-list does not relay them, so
+  there is no way to push an update from here. Updates happen on the machine.
 - Audit logs. `audit-logs:list` is organization-wide and excluded from scoped
   keys, so it sits outside this server's boundary.
 - Network, role, route and tag mutation — excluded by design, see above.

@@ -21,6 +21,7 @@ import (
 func Register(s *mcp.Server, c *dnapi.Client) {
 	registerReadTools(s, c)
 	registerHostTools(s, c)
+	registerDebugTools(s, c)
 }
 
 // jsonResult renders v as indented JSON in a tool result.
