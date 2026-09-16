@@ -1,11 +1,11 @@
 // Package tools registers the Defined Networking MCP tool set.
 //
-// The tool set deliberately mirrors data.ScopedKeyAllowedPermissions from the
-// API: full host lifecycle, read-only everywhere else. Role, route, network and
-// tag mutation are excluded because they escalate — roles:update edits firewall
-// rules, and networks:delete is unrecoverable. Pair this server with an API key
-// scoped the same way so the boundary is enforced server-side too, not just by
-// which tools exist here.
+// Hosts, roles and tags are writable; networks and routes are read-only.
+// Role and tag writes edit firewall rules, which grant network access, so they
+// are the escalating part of this tool set. networks:delete is unrecoverable
+// and stays excluded. Pair this server with an API key scoped to what a given
+// agent needs — for example without roles:* and tags:* write permissions — so
+// the boundary is enforced server-side, not just by which tools exist here.
 package tools
 
 import (
@@ -22,6 +22,7 @@ func Register(s *mcp.Server, c *dnapi.Client) {
 	registerReadTools(s, c)
 	registerHostTools(s, c)
 	registerDebugTools(s, c)
+	registerPolicyTools(s, c)
 }
 
 // jsonResult renders v as indented JSON in a tool result.

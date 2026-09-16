@@ -1,10 +1,10 @@
 // Command dn-mcp is an MCP server for managing a Defined Networking (Nebula)
 // network from an AI agent such as Claude Code.
 //
-// It exposes the Defined Networking admin API as MCP tools over stdio. The tool
-// set mirrors the API's own scoped-key permission boundary: the full host
-// lifecycle is writable, while networks, roles, routes and tags are read-only.
-// Scope the API key the same way so the boundary is enforced by the server too.
+// It exposes the Defined Networking admin API as MCP tools over stdio. Hosts,
+// roles and tags are writable, including role and tag firewall rules; networks
+// and routes are read-only. Scope the API key to what an agent actually needs so
+// the boundary is enforced by the server too, not only by which tools exist.
 //
 // Configuration is by environment:
 //
